@@ -1,0 +1,64 @@
+package com.zq.thread.concurrents;
+
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+
+/** 线程等待直到计数器减为0时开始工作
+ * @author zhangqing
+ * @Package com.zq.thread.concurrents
+ * @date 2020/7/1 11:47
+ */
+public class CountDownLatchDemo {
+
+    /**
+     * 定义前置任务线程
+     */
+    static class PreTaskThread implements Runnable {
+
+        private String task;
+
+        private CountDownLatch countDownLatch;
+
+        public PreTaskThread(String task, CountDownLatch countDownLatch){
+            this.task = task;
+            this.countDownLatch = countDownLatch;
+        }
+
+        @Override
+        public void run() {
+            try{
+                Random random = new Random();
+                Thread.sleep(random.nextInt(1000));
+                System.out.println(task + " - 任务完成");
+            }catch (Exception e){
+                e.printStackTrace();
+            }finally {
+                System.out.println(countDownLatch.toString());
+                countDownLatch.countDown();
+            }
+        }
+
+        public static void main(String[] args) {
+            //假设有三个模块需要加载
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            //主任务
+            new Thread(() -> {
+                try {
+                    System.out.println("等待加载数据...");
+                    System.out.println(String.format("还有%d个前置任务", countDownLatch.getCount()));
+                    countDownLatch.await();
+                    System.out.println("数据加载完成，正在开始游戏");
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }).start();
+
+            // 前置任务
+            new Thread(new PreTaskThread("加载地图数据", countDownLatch)).start();
+            new Thread(new PreTaskThread("加载人物模型", countDownLatch)).start();
+            new Thread(new PreTaskThread("加载背景音乐", countDownLatch)).start();
+        }
+
+    }
+}
